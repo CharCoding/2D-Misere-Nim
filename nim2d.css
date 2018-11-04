@@ -21,7 +21,8 @@ body {
     background:#0d0d0d;
     color: #BBBBBB;
     max-width: 700px;
-    margin: 0 auto;
+    position: absolute;
+    right: 40%;
     box-shadow: 0px 0px 15px 1px rgba(0,0,0,0.52);
     white-space: pre-wrap;
 }
@@ -44,7 +45,7 @@ p.footer {
 }
 
 a:link, a:visited {
-    color: #FFFFFF;    
+    color: #FFFFFF;
 }
 
 div.canvas {
@@ -68,10 +69,15 @@ span#info {
 }
 
 div.ai {
-    padding: 0 100px;
-    padding-bottom: 2em;
+    position: absolute;
+    width: 300px;
+    left: 100%;
+    top: 400px;
+    margin: 20px;
+    padding: 10px;
     background-color: rgba(0,0,0,0.5);
-    box-shadow: inset 0px 0px 25px 0px rgba(0,0,0,0.95);
+    /*box-shadow: inset 0px 0px 25px 0px rgba(0,0,0,0.95);*/
+    box-shadow: 0px 0px 15px 1px rgba(0,0,0,0.52);
 }
 
 h2.ai {

@@ -1,11 +1,11 @@
 'use strict'; // This code won't work for IE 11 due to for...of loops
-var style = window.getComputedStyle(document.documentElement);
-let colors = {
+const style = window.getComputedStyle(document.documentElement),
+	colors = {
 	"selectborder": style.getPropertyValue('--select-border'),
 	"blocktext": style.getPropertyValue('--block-text'),
 	"selected": style.getPropertyValue('--selected'),
 	"normal": style.getPropertyValue('--normal')
-}
+};
 let mousedown = false, move = 2, startX, startY, endX, endY, timer,
 	animation = false, filledX = [], filledY = [];
 const t = c.getContext('2d'), l = 650, sidelength = 100, half = sidelength / 2,
@@ -102,8 +102,22 @@ const t = c.getContext('2d'), l = 650, sidelength = 100, half = sidelength / 2,
 			}
 		} else if(losingPositions.includes(int)) method = 'Dictionary, losing';
 		if(display) {
-			AIdialog(`AI${1 + (move & 1)}: (${x0}, ${y0}), (${x1}, ${y1})`)
+			startX = endX = x0 * sidelength + half - 5;
+			startY = endY = y0 * sidelength + half - 5;
+			animation = mousedown = true;
+			const targetX = (x1 + 1) * sidelength + 5,
+			targetY = (y1 + 1) * sidelength + 5;
+			animation = setInterval(() => {
+				if(endX < targetX) endX += 2;
+				if(endY < targetY) endY += 2;
+				if(endX >= targetX && endY >= targetY) {
+					clearInterval(animation);
+					animation = false;
+					setTimeout(turn, 250);
+				}
+			}, 16);
 			console.log({
+				"move": `AI${1 + (move & 1)}: (${x0}, ${y0}), (${x1}, ${y1})`,
 				"posToInt": int,
 				"filledX": filledX,
 				"filledY": filledY,
@@ -240,10 +254,10 @@ const t = c.getContext('2d'), l = 650, sidelength = 100, half = sidelength / 2,
 			history.length = rollback.length = 0;
 			dialog(`Player ${1 + (move & 1)} won in ${move >>> 1} moves!`);
 			move = 2;
+			return;
 		}
 		if((!(move & 1) && p1ai.checked) || ((move & 1) && p2ai.checked))
 			AI(arr, +searchBreadth.value);
-		else AIdialog();
 		//setTimeout(cancelAnimationFrame, 16, timer);
 	};
 // Note: some winning position indices are the same if you rotate it 90 degrees...
@@ -297,19 +311,22 @@ c.addEventListener('mousedown', e => {
 });
 c.addEventListener('mousemove', e => {
 	if(mousedown && !animation) {
-		endX = e.clientX;
-		endY = e.clientY;
+		endX = e.offsetX;
+		endY = e.offsetY;
 	}
 });
-c.addEventListener('mouseup', e => { if(mousedown) turn(); });
-c.addEventListener('mouseout', e => mousedown = false);
-// not working:
-//p1ai.addEventListener('change', e => { if(p1ai.checked && !(move & 1)) AI(arr, +searchBreadth); });
-//p2ai.addEventListener('change', e => { if(p2ai.checked && move & 1) AI(arr, +searchBreadth); });
+c.addEventListener('mouseup', e => { if(!animation && mousedown) turn(); });
+c.addEventListener('mouseout', e => { if(!animation) mousedown = false; });
+p1ai.addEventListener('click', e => { if(!animation && p1ai.checked && !(move & 1)) AI(arr, +searchBreadth.value); });
+p2ai.addEventListener('click', e => { if(!animation && p2ai.checked && move & 1) AI(arr, +searchBreadth.value); });
 function draw() {
 	t.clearRect(0, 0, l, l);
 	t.fillStyle = '#fff';
 	t.fillText(`Player ${1 + (move & 1)}, move ${move >>> 1}`, 4, 20);
+	if(animation) {
+		t.fillStyle = '#ccc';
+		t.fillText('AI is making a move...', 300, 20);
+	}
 	for(let i = 6; i--;) {
 		for(let j = 6; j--;) {
 			const x = i * sidelength + half,
@@ -379,16 +396,11 @@ function rmDialog() {
 		document.body.removeChild(overlay);
 	} catch(e) {}
 }
-function AIdialog(input) {
-	if (input) {
-		document.getElementById("info").innerText = input
-		document.getElementById("info").style.visibility = "visible"
-	} else {
-		//document.getElementById("info").innerText = ""
-		document.getElementById("info").style.visibility = "hidden"
-	}
-}
 document.addEventListener('keydown', e => {
+	if(animation) {
+		clearInterval(animation);
+		animation = false;
+	}
 	switch(e.keyCode) {
 		case 82: // 'R' resets the game upon confirming
 			if(e.ctrlKey) return;
@@ -407,6 +419,8 @@ document.addEventListener('keydown', e => {
 			for(let i = 0; i < h.length; i += 2)
 				arr[h[i]][h[i + 1]] = true;
 			rollback.push(h);
+			// if(!(move & 1) && p1ai.checked) AI(arr, +searchBreadth.value);
+			// else if((move & 1) && p2ai.checked) AI(arr, +searchBreadth.value);
 			break;
 		case 89: // 'Y' redoes last moves
 			if(!rollback.length) return;
@@ -417,9 +431,6 @@ document.addEventListener('keydown', e => {
 			history.push(h);
 			break;
 	}
-	if(!(move & 1) && p1ai.checked) AI(arr, +searchBreadth); // are these just not working
-	else if((move & 1) && p2ai.checked) AI(arr, +searchBreadth); // FIXME: AI doesn't update automatically
-	else AIdialog();
 });
 timer = requestAnimationFrame(draw);
 //cancelAnimationFrame(timer);
