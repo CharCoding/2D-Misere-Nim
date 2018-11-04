@@ -102,20 +102,20 @@ const t = c.getContext('2d'), l = 650, sidelength = 100, half = sidelength / 2,
 			}
 		} else if(losingPositions.includes(int)) method = 'Dictionary, losing';
 		if(display) {
-			startX = endX = x0 * sidelength + half - 5;
-			startY = endY = y0 * sidelength + half - 5;
+			startX = endX = x0 * sidelength + half / 2;
+			startY = endY = y0 * sidelength + half / 2;
 			animation = mousedown = true;
-			const targetX = (x1 + 1) * sidelength + 5,
-			targetY = (y1 + 1) * sidelength + 5;
+			const targetX = (x1 + 1) * sidelength + half / 2,
+			targetY = (y1 + 1) * sidelength + half / 2;
 			animation = setInterval(() => {
-				if(endX < targetX) endX += 2;
-				if(endY < targetY) endY += 2;
+				if(endX < targetX) endX++;
+				if(endY < targetY) endY++;
 				if(endX >= targetX && endY >= targetY) {
 					clearInterval(animation);
 					animation = false;
-					setTimeout(turn, 250);
+					turn();
 				}
-			}, 16);
+			}, 0);
 			console.log({
 				"move": `AI${1 + (move & 1)}: (${x0}, ${y0}), (${x1}, ${y1})`,
 				"posToInt": int,
