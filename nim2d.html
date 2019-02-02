@@ -4,393 +4,591 @@
   <title>2D Misère Nim</title>
   <meta charset="utf-8" />
   <style type="text/css">
-  body, canvas { background-color: #000; color: #fff; position: absolute; left: 0; top: 0; margin: 0; width: 100%; font-size: 18px; }
-  canvas { width: 650px; height: 650px; border: 1px solid #0f0; }
-  div { position: absolute; left: 700px; top: 0; white-space: pre-wrap; }
-  h2, h3 { margin: -8px 1px; }
-  span { position: absolute; left: 0; top: 700px; }
+  @media (max-aspect-ratio: 4/3) { /*Responsive design heck yeah*/
+    div {
+      position: relative;
+      left: 50%;
+      width: 90vw;
+      margin-left: -45vw;
+    }
+    #p { height: 80vh; }
+    #o p { display: inline-block; margin: 1vmin 3vmin; }
+  }
+  @media (min-aspect-ratio: 4/3) and (max-aspect-ratio: 16/9) {
+    div { position: absolute; }
+    #p {
+      top: 1vw;
+      left: 5vw;
+      width: 50vw;
+      height: 80vh;
+    }
+    #o {
+      top: 1vw;
+      right: 5vw;
+      width: 35vw;
+      height: 80vh;
+    }
+    #h {
+      left: 5vw;
+      top: 80vh;
+      width: 90vw;
+    }
+  }
+  @media (min-aspect-ratio: 16/9) {
+    div {
+      position: absolute;
+      top: 1vw;
+      bottom: 5vw;
+      height: 40vw;
+    }
+    #p {
+      left: 50%;
+      margin-left: -20vw;
+      width: 40vw;
+    }
+    #h, #o { width: 27vw; }
+    #h { left: 1vw; }
+    #o { right: 1vw; }
+
+  }
+  body { background-color: #1f1f1f; color: #eee; position: absolute; left: 0; top: 0; margin: 0; width: 100%; font-size: 2vmin; }
+  input { font-size: 1.5vmin; }
+  canvas { position: relative; width: 650px; height: 650px; left: 50%; top: 0; margin-left: -325px; box-shadow: 0 0 1vmin 1vmin #000; }
+  #f, h2, h3 { text-align: center; margin-top: 0; }
+  h2 { font-size: 4vmin; }
+  h3 { font-size: 3vmin; }
+  a:link, a:visited { color: inherit; text-decoration: underline; }
   </style>
 </head>
 <body>
-  <canvas id="c" width="650" height="650"></canvas>
-  <div>
-    <h2>2D Misère <a href="https://en.wikipedia.org/wiki/Nim" alt="Original Nim game">Nim</a> by <a href="https://github.com/CharCoding/2D-Misere-Nim/" alt="Github Repository">CharCoding</a> ©, 2018</h2>
-    <h3>Rules</h3>
-    1. Player 1 and 2 each remove a rectangle of pieces each turn.
-      - Doesn't matter if some pieces within the rectangle are already removed.
-    2. Each player must remove at least 1 piece from the board.
-    3. The person who has to remove the last piece loses.
-    <h3>How to play</h3>
-    - Hold down the mouse on the board and drag it to select pieces you want to remove. (highlighted in yellow)
-      - If you want to cancel it, move the mouse button outside the board and release the mouse.
-    - Release the mouse to remove those pieces and hand the turn to the opponent.
-    - This game is really hard to play perfectly, so take your time and think about your opponent's possible moves.
-    - Press Z to undo, Y to redo, R to reset (please don't cheat though)
-    - If you enable the AI, please remove the squares it tells you on its turns. The AI isn't <i>that</i> smart. <b>Yet.</b>
-    <h3>Hints (if you play perfectly)</h3>
-    a. If you leave your opponent with a 2x2 square, you're winning.
-    b. If your opponent leaves you with a 3x3 square, you're winning.
-      - Take the center or one of the corners.
-    c. If your opponent leaves you with a 3x4 rectangle, you're winning.
-      - Take the middle 2 from the long edge on either side.
-    <h3>Controls</h3>
-    The AI will only give two coordinates as output; you have to make the move for them since there are no automatic animations made for them yet.
-    <input type="checkbox" id="p1ai" /><label for="p1ai">Use AI for player 1</label>
-    <input type="checkbox" id="p2ai" /><label for="p2ai">Use AI for player 2</label>
-    AI random search tries:<input type="number" id="searchBreadth" value="100" min="0" max="441" step="1" />
+  <div id="p"><h2>2D Misère <a href="https://en.wikipedia.org/wiki/Nim">Nim</a></h2><canvas id="c" width="650" height="650"></canvas></div>
+  <div id="o">
+    <h3>Options</h3>
+    <form autocomplete="on">
+      <p>Use AI: <input type="checkbox" id="p1ai" /><label for="p1ai">Player 1</label> &nbsp; <input type="checkbox" id="p2ai" /><label for="p2ai">Player 2</label> &nbsp; <input type="button" value="Once" id="once" /></p>
+      <p>AI level: Weak <input type="range" id="lvl" min="0" max="2" step="1" value="2" /> Strong</p>
+      <p><input type="checkbox" id="analyze" checked="true" /><label for="analyze">Show analysis</label> &nbsp; <input type="checkbox" id="auto" /><label for="auto">Auto move</label></p>
+      <p><input type="button" id="undoBtn" value="Undo (Z)" />
+      <input type="button" id="redoBtn" value="Redo (Y)" />
+      <input type="button" id="resetBtn" value="Reset (R)" /></p>
+      <p>Current position #: <input type="number" min="9" max="4398046511103" step="1" readonly="true" id="current" value="4398046511094" autocomplete="off" /></p>
+      <p>Load position: <input type="number" min="9" max="4398046511103" step="1" id="load" placeholder="Click to load" autocomplete="off" /></p>
+      <p id="info">AI analysis will be shown here.</p>
+    </form>
   </div>
-  <span id="info"></span>
-  <script type="text/javascript">'use strict';// This code won't work for IE 11 due to for...of loops
-  let mousedown = false, move = 2, startX, startY, endX, endY, timer,
-    animation = false, filledX = [], filledY = [];
-  const t = c.getContext('2d'), l = 650, sidelength = 100, half = sidelength / 2,
-    arr = new Array(6), history = [], rollback = [], AABB = (x, y) => // axis-aligned bounding box check
-      x < Math.max(startX, endX) && x + half > Math.min(startX, endX) &&
-      y < Math.max(startY, endY) && y + half > Math.min(startY, endY),
-    equal = (a, b) => a >= b && b >= a, // check if 2 arrays are equal (actually works, magic)
-    sum = arr => arr.reduce((a, b) => a + b, 0),
-    sumAll = arr => arr.reduce((a, b) => a + sum(b), 0), // unused...
-    stats = arr => { // also unused, this might be helpful to further board analysis
-      let temp = 0, totalI = 0, totalJ = 0;
-      for(let i = arr.length; i--;) {
-        for(let j = arr[0].length; j--;)
-          temp += arr[i][j];
-        totalI += temp * (temp - 1) / 2;
-        temp = 0;
+  <div id="h">
+    <h3>Help</h3>
+    1. Players 1 and 2 each draws a rectangle of squares (at least 1) to remove each turn.<br />
+    2. The player who has to remove the last square loses.<br />
+    3. To cancel the current move, move the mouse button outside the board and release the mouse.<br />
+    4. Hints: (if you play perfectly)<br />
+    &nbsp; - If you leave your opponent with a 2x2 square, you're winning.<br />
+    &nbsp; - If your opponent leaves you with a 3x3 square, take the center or one of the corners.<br />
+    &nbsp; - If your opponent leaves you with a 3x4 rectangle, take the middle 2 from the long edge on either side.<br />
+    &nbsp; - If your opponent leaves you with a 4x4 square, take the 4 center pieces.<br />
+    &nbsp; - Take your time to think! This is a simple game but it is not easy!<hr />
+    <p id="f"><a href="https://github.com/CharCoding/2D-Misere-Nim/">2D Misère Nim</a> by <a href="https://github.com/CharCoding/">CharCoding</a>, © 2018.</p>
+  </div>
+  <script type="text/javascript">'use strict';
+/* Move rating:
+-1: The board is empty.
+0: This move leaves the opponent with an 1x1 square.
+1: This move leaves the opponent with a 2x2 square.
+1 to losing.length - 1: This move leaves the opponent with a position in the losing dictionary.
+Lower is better, since it's closer to the 2x2 square.
+losing.length: This is a random 1x1 move.
+losing.length + 1 to losing.length * 2 - 1: This move gives the opponent the opportunity to leave you with a position in the losing dictionary.
+Lower is better, since the index away from 2x2 square is subtracted from the rating.
+losing.length * 2 - 1: This move is one move away from a 2x2 square.
+losing.length * 2: This move is one move away from an 1x1 square.
+losing.length * 2 + 1: This move takes everything. Last, only possible, losing move.
+Any other value: Error
+*/
+let timer, animation = false, turn = 2, then = 0;
+const s = 6, l = 50, board = new Array(s), losing = Int32Array.of(73,978,14683,15259,16347,21403,22491,22747,24027,25435,27355,28635,30555,31707,32091,32475,32667,59164,91804,104867,115619,121315,124764,125411,151388,160476,163804,169443,170467,173404,181219,181731,182108,189276,190364,193116,196579,202979,206044,209891,213731,214748,216668,218083,221916,222684,235427,235875,236451,238435,239324,239971,243683,246627,248547,249059,253916,257507,261084,261724,261987,811812,919332,926052,942500,942948,944036,1335972,1443492,1450212,1467108,1467812,1598052,1599268,1705572,1713380,1722276,1728996,1729892,1730212,1730532,1860452,1861540,1967972,1975140,1975716,1976036,1991268,1991588,1992164,1992484,2384292,2385828,2491812,2500068,2639652,2646372,2753892,2770788,2778532,2901924,2909092,2909988,3016612,3024228,3039716,3041124,3163812,3170532,3278052,3294628,3294948,3302884,3432932,3434148,3540452,3547620,3548388,3557284,3565284,3688164,3695332,3696036,3696484,3802852,3810788,3818980,3819108,3826916,3827620,3957732,4065252,4089252,4089828), // 134 sorted losing positions
+  history = [], rollback = [],
+  clone = board => board.map(x => x.slice()),
+  sum = row => row.reduce((a, b) => a + b),
+  r = x => x & x - 1, // check if x has only 1 bit set (bithack used in sideways addition)
+  //rating = x => Math.round(Math.atan(losing.length - x) * 31.830988618379067 + 50), // "confidence interval" (fake data)
+  /*// Debugging
+  tri = n => n * (n - 1) / 2,
+  equal = (a, b) => a >= b && a <= b,
+  triDiff = (x, y) => (x - y) * (x + y - 1) / 2,
+  fx = () => { board.forEach(x => x.reverse()); update(); }, // flip X
+  fy = () => { board.reverse(); update(); }, // flip Y
+  tb = () => { // transpose board
+    for(let i = s; i--;) // minimum # of swaps
+      for(let j = i; j--;) {
+        const temp = board[i][j];
+        board[i][j] = board[j][i];
+        board[j][i] = temp;
       }
-      for(let i = arr.length; i--;) {
-        for(let j = arr[0].length; j--;)
-          temp += arr[j][i];
-        totalJ += temp * (temp - 1) / 2;
-        temp = 0;
-      } // lol didn't even finish; no return statement.
-    },
-    shrink = arr => {
-      filledX.length = filledY.length = 0;
-      // filter empty rows and copy each row that is not empty (works, don't touch)
-      const narr = arr.filter((x, i) => sum(x) && filledX.push(i)).map(x => x.slice());
-      if(!narr.length) return narr;
-      for(let j = narr[0].length; j--;) {
-        let filled = false;
-        for(const row of narr) {
-          if(row[j]) {
-            filled = true;
-            filledY.unshift(j);
-            break;
-          }
-        }
-        if(!filled)
-          for(const row of narr) // where are the brackets, you ask?
-            row.splice(j, 1); // I ate them for breakfast.
-      }
-      return narr;
-    },
-    time = (fn, arg1, arg2) => { // To time how long the AI takes, run: time(AI, arr, 441)
-      const now = performance.now();
-      fn(arg1, arg2);
-      console.log(performance.now() - now);
-    },
-    posToInt = arr => { // converts board position to integer for dictionary lookup
-      let k = 0;
-      for(const row of arr)
-        for(const cell of row)
-          k = k * 2 + cell;
-      return k;
-    },
-    positions = [], // entries point to coordinates of next move
-    losingPositions = [], // values indicate losing position
-    evaluation = {
-      'Empty': 7, // empty = already won = best
-      '1x1': 6, // can leave opponent with 1x1
-      '2x2': 5, // can leave opponent with 2x2
-      'Dictionary': 4, // dictionary needs to identify winning vs losing move...
-      'Search': 3, // Unused, maybe use this for deeper search?
-      'Random': 3, // Most AI moves actually return this
-      'Dictionary, losing': 2, // AI needs to know if a position is bad for opponent
-      '2x2, losing': 1, // is left with 2x2
-      '1x1, losing': 0, // is left with 1x1
-    },
-    randomXY = () => {
-      const pos = [];
-      for(let i = 6; i--;)
-        for(let j = 6; j--;)
-          if(arr[i][j]) pos.push([i, j]);
-      return pos[Math.random() * pos.length | 0];
-    }, // BEGIN AI CODE, good luck.
-    AIoutput = (x0, y0, x1, y1, int = 0, method = 'Unknown', display = 0) => {
-      if(x0 === undefined || y0 === undefined || x1 === undefined || y1 === undefined) {
-        [x0, y0] = [x1, y1] = randomXY();
-        method += ', losing';
-      } else if(method == '1x1' || method == '2x2') {
-        let count = 0;
-        for(let x = x0; x <= x1; x++) {
-          for(let y = y0; y <= y1; y++) {
-            if(arr[x][y]) {
-              count++;
-              break;
-            }
-          }
-        }
-        if(!count) {
-          [x0, y0] = [x1, y1] = randomXY();
-          method += ', losing';
-        }
-      } else if(losingPositions.includes(int)) method = 'Dictionary, losing';
-      if(display)
-        info.innerText = `AI${1 + (move & 1)}: (${x0}, ${y0}), (${x1}, ${y1})\nposToInt: ${int}\
-      \nfilledX: ${filledX}\nfilledY: ${filledY}\nmethod: ${method}`;
-      if(method[0] == 'S') return method.slice(0, 6); // 'Search'
-      return method;
-    },
-    AI = (arr, breadth = 0) => { // literally a bunch of if statements...
-      // BEGIN STRUCTURAL ANALYSIS
-      const shrunk = shrink(arr);
-      if(!shrunk.length) return 'Empty';
-      const maxX = shrunk.length - 1, left = shrunk[0], right = shrunk[maxX],
-        top = [], bottom = [], maxY = left.length - 1, top2 = [], bottom2 = [],
-        posIndex = posToInt(shrunk);
-      let x0 = 0, y0 = 0, x1 = 5, y1 = 5;
-      for(const row of shrunk) { // save horizontal rows for later calculations
-        top.push(row[0]);
-        if(maxY) { // necessary check because row might have only 1 cell, maxY = 0
-          top2.push(row[1]); // but doesn't matter if top2 == bottom2
-          bottom2.push(row[maxY - 1]);
-        }
-        bottom.push(row[maxY]);
-      }
-      const sums = [sum(left), sum(right), sum(top), sum(bottom)]; // get sum of border rows
-      if(sums.includes(1)) { // Winning position! Unless this is the only piece left...
-        if(sums[0] == 1) // In that case, AIoutput() will fix this mistake. (e.g. x0 = undefined)
-          x0 = filledX[1];
-        else if(sums[1] == 1)
-          x1 = filledX[maxX - 1];
-        else if(sums[2] == 1)
-          y0 = filledY[1];
-        else// if(sums[3] == 1) // implied
-          y1 = filledY[maxY - 1];
-        return AIoutput(x0, y0, x1, y1, posIndex, '1x1', breadth);
-      }
-      if(sums[0] == 2) {
-        if(equal(left, right)) { // Are the leftmost and rightmost columns exactly the same with 2 pieces?
-          x0 = filledX[1];
-          x1 = filledX[maxX - 1];
-          return AIoutput(x0, y0, x1, y1, posIndex, '2x2', breadth);
-        }
-        if(equal(left, shrunk[1])) { // Are the 2 leftmost columns exactly the same with 2 pieces?
-          x0 = filledX[2];
-          return AIoutput(x0, y0, x1, y1, posIndex, '2x2', breadth);
-        }
-      }
-      if(sums[2] == 2) {
-        if(equal(top, bottom)) { // Are the top and bottom rows exactly the same with 2 pieces?
-          y0 = filledY[1];
-          y1 = filledY[maxY - 1];
-          return AIoutput(x0, y0, x1, y1, posIndex, '2x2', breadth);
-        }
-        if(equal(top, top2)) { // Are the 2 highest rows exactly the same with 2 pieces?
-          y0 = filledY[2];
-          return AIoutput(x0, y0, x1, y1, posIndex, '2x2', breadth);
-        }
-      }
-      if(sums[1] == 2 && equal(right, shrunk[maxX - 1])) { // Are the 2 rightmost columns exactly the same with 2 pieces?
-        x1 = filledX[maxX - 2];
-        return AIoutput(x0, y0, x1, y1, posIndex, '2x2', breadth);
-      }
-      if(sums[3] == 2 && equal(bottom, bottom2)) { // Are the 2 lowest rows exactly the same with 2 pieces?
-        y1 = filledY[maxY - 2];
-        return AIoutput(x0, y0, x1, y1, posIndex, '2x2', breadth);
-      } // END STRUCTURAL ANALYSIS
-      const AImove = positions[posIndex];
-      if(!AImove) { // Unknown position? Make random move.
-        if(!breadth) { // If not searching recursively, just return random.
-          [x0, y0] = randomXY();
-          return AIoutput(x0, y0, x0, y0, posIndex, 'Random', breadth);
-        } // BEGIN RANDOM SEARCH
-        // # of moves = maxX(maxX + 1) * maxY(maxY + 1) / 4. For 6x6 this is maximum 441 options.
-        const possibleMoves = []; // @ x = 4, y = 4, l = 100
-        let bestMove = [0, 0, 5, 5, 'Empty'];
-        for(const rx1 of filledX)
-          for(const ry1 of filledY)
-            for(const rx0 of filledX)
-              for(const ry0 of filledY)
-                // if(rx1 >= rx0 && ry1 >= ry0) // Note: some empty squares are included.
-                // if(arr[rx1][ry1] && arr[rx0][ry0] && rx1 >= rx0 && ry1 >= ry0)
-                // however, some moves will require a coordinate to be on an empty square
-                // It may even be the winning move, although this happens rarely.
-                // the following criteria is a compromise between check speed and validity
-                // it checks for 1x1 squares that are empty and excludes them.
-                if(rx1 >= rx0 && ry1 >= ry0 && (rx1 != rx0 || ry1 != ry0 || arr[rx0][ry0]))
-                  possibleMoves.push([rx0, ry0, rx1, ry1]); // Rip
-        for(let i = Math.min(breadth, possibleMoves.length); i--;) {
-          const narr = arr.map(x => x.slice()), // clones arr
-            [rx0, ry0, rx1, ry1] = possibleMoves.splice(Math.random() * possibleMoves.length | 0, 1)[0];
-          let count = 0;
-          for(let x = rx0; x <= rx1; x++)
-            for(let y = ry0; y <= ry1; y++) {
-              if(narr[x][y]) count++;
-              narr[x][y] = false;
-            }
-          if(!count) continue; // this is still necessary because sometimes r1 != r0 and the region is still empty
-          const thisEvaluation = AI(narr);
-          if(evaluation[thisEvaluation] < evaluation[bestMove[4]])
-            bestMove = [rx0, ry0, rx1, ry1, thisEvaluation];
-        }
-        [x0, y0, x1, y1] = bestMove;
-        return AIoutput(x0, y0, x1, y1, posIndex, `Search${breadth}:${bestMove[4]}`, breadth); // END RANDOM SEARCH
-      }// BEGIN DICTIONARY SEARCH
-      if(AImove.length == 4) // normalize data structure
-        [x0, y0, x1, y1] = AImove;
-      else [x0, y0] = [x1, y1] = AImove; // Assumption: x1 >= x0, y1 >= y0
-      if(filledY.length > filledX.length) [x0, y0, x1, y1] = [y0, x0, y1, x1];
-      return AIoutput(filledX[x0], filledY[y0], filledX[x1], filledY[y1], posIndex, 'Dictonary', breadth); // END DICTIONARY SEARCH
-    },
-    turn = () => {
-      //setTimeout(cancelAnimationFrame, 16, timer);
-      mousedown = false;
-      const removed = [];
-      for(let i = 6; i--;) {
-        for(let j = 6; j--;) {
-          if(!arr[i][j]) continue;
-          const x = i * sidelength + half, y = j * sidelength + half;
-          if(AABB(x, y)) {
-            arr[i][j] = false;
-            removed.push(i, j);
-          }
-        }
-      }
-      if(removed.length) {
-        move++;
-        history.push(removed);
-        rollback.length = 0;
-      }
-      if(arr.every(e => e.every(f => !f))) {
-        //cancelAnimationFrame(timer);
-        arr.forEach(e => e.fill(true));
-        history.length = rollback.length = 0;
-        alert(`Player ${1 + (move & 1)} won in ${move >>> 1} moves!`);
-        move = 2;
-      }
-      if((!(move & 1) && p1ai.checked) || ((move & 1) && p2ai.checked))
-        AI(arr, +searchBreadth.value);
-      else info.innerText = '';
-      //setTimeout(cancelAnimationFrame, 16, timer);
-    };
-  // Note: some winning position indices are the same if you rotate it 90 degrees...
-  // This is fixed by swapping x and y if there are more empty X columns than empty Y rows.
-  // Winning:
-    // 3x3 is all covered by using losingPositions[].
-    // It's better to use losingPositions because it takes less space.
-    // 3x4
-  //positions[4095] = [1, 0, 2, 0];
-  positions[4007] = [4, 3];
-  positions[3895] = [0, 3];
-  positions[4021] = [1, 1, 1, 2];
-  positions[2495] = [3, 2]; // <-- could be problematic; need checks
-  positions[2366] = [2, 1, 2, 2]; // same here
-  positions[3807] = [1, 1];
-  positions[2654] = [2, 1, 2, 2];
-  positions[3791] = [0, 2];
-  positions[3277] = [1, 1, 1, 2];
-  positions[3743] = [0, 1, 1, 1];
-  positions[3295] = [2, 1];
-  positions[3806] = [1, 1];
-  /*//losing
-  positions[2559] = [1, 1];
-  positions[2494] = [0, 1]; // same here
-  positions[3679] = [3, 2];
-  positions[3279] = [3, 1];*/
-
-  losingPositions.push(355, 334, 397, 229); // 3x3 5 pieces
-  losingPositions.push(238, 427); // 3x3 6 pieces
-  losingPositions.push(375, 351, 477, 501);
-  losingPositions.push(495, 255, 447, 507, 510); // 3x3 8 pieces
-  losingPositions.push(1806); // 3x4 6 pieces
-  losingPositions.push(1949, 1638, 3339, 3687, 1806); // 3x4 8 pieces
-  losingPositions.push(4023, 3807, 2559, 4089); // 3x4 10 pieces
-  losingPositions.push(12684, 51219, 41349, 22554); // 4x4 6 pieces
-  losingPositions.push(47133); // 4x4 8 pieces
-  // TODO: add ALL losing positions (there are at least 2**35 of them on a 6x6 board...)
-  for(let i = 6; i--;)
-    arr[i] = new Array(6).fill(true);
-  t.strokeStyle = '#f00';
-  t.font = '24px Arial';
-  t.lineWidth = 2;
-  // GUI events
-  c.addEventListener('mousedown', e => {
-    if(!animation) {
-      startX = endX = e.clientX;
-      startY = endY = e.clientY;
-      mousedown = true;
+    update();
+  },
+  gen = () => {
+    let str = boardToInt(shrink(board));
+    fx();
+    str += ',' + boardToInt(shrink(board));
+    fy();
+    str += ',' + boardToInt(shrink(board));
+    fx();
+    str += ',' + boardToInt(shrink(board));
+    tb();
+    str += ',' + boardToInt(shrink(board));
+    fx();
+    str += ',' + boardToInt(shrink(board));
+    fy();
+    str += ',' + boardToInt(shrink(board));
+    fx();
+    console.log(str + ',' + boardToInt(shrink(board)));
+  },
+  transpose = board => {
+    const w = board.length, h = board[0].length, tboard = new Array(h);
+    for (let i = h; i--;) {
+      tboard[i] = new Uint8Array(w);
+      for (let j = w; j--;)
+        tboard[i][j] = board[j][i];
     }
-    //draw();
-  });
-  c.addEventListener('mousemove', e => {
-    if(mousedown && !animation) {
-      endX = e.clientX;
-      endY = e.clientY;
+    return tboard;
+  },
+  //*/
+  strToBoard = s => s.split('/').map(x => Uint8Array.from(x)),
+  binSearch = x => { // Searches if x exists in losing[] in O(log n)
+    let min = 0, max = losing.length - 1, index, current;
+    while(min <= max) {
+      index = min + max >>> 1;
+      current = losing[index];
+      if(current < x)
+        min = index + 1;
+      else if(current > x)
+        max = index - 1;
+      else
+        return index;
     }
-  });
-  c.addEventListener('mouseup', e => { if(mousedown) turn(); });
-  c.addEventListener('mouseout', e => mousedown = false);
-  // not working:
-  //p1ai.addEventListener('change', e => { if(p1ai.checked && !(move & 1)) AI(arr, +searchBreadth); });
-  //p2ai.addEventListener('change', e => { if(p2ai.checked && move & 1) AI(arr, +searchBreadth); });
-  function draw() {
-    t.clearRect(0, 0, l, l);
-    t.fillStyle = '#fff';
-    t.fillText(`Player ${1 + (move & 1)}, move ${move >>> 1}`, 4, 20);
-    for(let i = 6; i--;) {
-      for(let j = 6; j--;) {
-        const x = i * sidelength + half,
-          y = j * sidelength + half;
-        if(arr[i][j]) {
-          if(mousedown && AABB(x, y)) t.fillStyle = '#ff0';
-          else t.fillStyle = '#0ff';
-          t.fillRect(x, y, half, half);
-        }
-        t.fillStyle = '#00f';
-        t.fillText(i + ', ' + j, x + 5, y + 32);
-      }
+    return -min - 1; // returns -insertion point - 1 if not found
+  },
+  mouse = { sx: 0, sy: 0, ex: 0, ey: 0, down: false },
+  t = c.getContext('2d');
+for (let i = s; i--;) board[i] = new Uint8Array(s).fill(1);
+t.strokeStyle = '#ccc';
+t.font = '24px Arial';
+t.textAlign = 'center';
+t.textBaseline = 'middle';
+t.lineWidth = 2;
+function boardToInt(board) {
+  if(!board.length) return 0;
+  if(typeof board == 'string') board = strToBoard(board);
+  let sum = 0;
+  for (const row of board)
+    for (const cell of row)
+      sum = sum * 2 + cell;
+  return sum * 64 + board.length * 8 + board[0].length; // potentially optimizeable?
+}
+function intToBoard(int) {
+  const w = int >>> 3 & 7, h = int & 7, board = new Array(w);
+  int = Math.floor(int / 64);
+  for(let i = board.length; i--;) {
+    board[i] = new Uint8Array(h);
+    for(let j = board[i].length; j--;) {
+      board[i][j] = int & 1;
+      int = Math.floor(int / 2);
     }
-    if(mousedown) {
-      t.strokeRect(Math.min(startX, endX), Math.min(startY, endY),
-      Math.abs(startX - endX), Math.abs(startY - endY));
-    }
-    timer = requestAnimationFrame(draw);
   }
-  document.addEventListener('keydown', e => {
-    switch(e.keyCode) {
-      case 82: // 'R' resets the game upon confirming
-        if(e.ctrlKey) return;
-        if(move && confirm('Are you sure to restart the game?')) {
-          arr.forEach(e => e.fill(true));
-          history.length = rollback.length = 0;
-          move = 2;
-        }
+  return board;
+}
+/*// Unused
+function binaryTranspose(int) {
+  const w = int >>> 3 & 7, h = int & 7;
+}
+class Move {
+  constructor(board, x0, y0, x1 = x0, y1 = y0) {
+    this.old = board;
+    this.new = clone(board);
+    this.x0 = x0;
+    this.y0 = y0;
+    this.x1 = x1;
+    this.y1 = y1;
+    take(this.new, x0, y0, x1, y1);
+    const oldHVPairs = analyze(board), newHVPairs = analyze(this.new);
+    this.dXPairs = newHVPairs[0] - oldHVPairs[0];
+    this.dYPairs = newHVPairs[1] - oldHVPairs[1];
+    if(losing.includes(boardToInt(this.new))) this.rating = 9;
+    else this.rating = 4;
+  }
+  make() {
+    return take(board, this.x0, this.y0, this.x1, this.y1);
+  }
+}
+class State {
+  constructor(board) {
+    this.board = board;
+    this.shrunk = shrink(board);
+    [this.XPairs, this.YPairs] = analyze(board);
+  }
+  get moves() {
+    const possibleMoves = [], filledX = [], filledY = [], shrunk = shrink(board, filledX, filledY);
+    for (const rx1 of filledX)
+      for (const ry1 of filledY)
+        for (const rx0 of filledX)
+          for (const ry0 of filledY)
+            if (rx1 >= rx0 && ry1 >= ry0 && isPrimitive(board, rx0, ry0, rx1, ry1))
+              possibleMoves.push([rx0, ry0, rx1, ry1]);
+    return possibleMoves;
+  }
+}
+function analyze(board, l, index) {
+  const tboard = transpose(board);
+  let hPairs = 0, vPairs = 0, radicals = 0;
+  for (let i = s; i--;) {
+    const s = sum(board[i]);
+    if(s == 1) radicals++;
+    hPairs += tri(s);
+  }
+  for (let j = s; j--;) {
+    const s = sum(tboard[j]);
+    if(s == 1) radicals++;
+    vPairs += tri(s);
+  }
+  info.textContent = `Position ${index}: ${l} moves, ${hPairs} Hpairs, ${vPairs} Vpairs, ${radicals} radicals.`
+}
+//*/
+function log(board) {
+  let str = '';
+  for (let i = 0; i < board[0].length; i++) {
+    for (let j = 0; j < board.length; j++)
+      str += board[j][i] + ' '; // swap i and j so that x is horizontal and y is vertical
+    str += '\n';
+  }
+  console.log(str);
+}
+function shrink(board, filledX = [], filledY = []) { // gets rid of empty rows and columns
+  if(board[0].length == 0) return 0;
+  filledX.length = filledY.length = 0;
+  const narr = board.filter((x, i) => sum(x) && filledX.push(i)).map(x => Array.from(x));
+  if (!narr.length) return narr;
+  for (let j = narr[0].length; j--;) {
+    let filled = false;
+    for (const row of narr)
+      if (row[j]) {
+        filled = true;
+        filledY.unshift(j);
         break;
-      case 90: // 'Z' undoes last moves
-        if(!history.length) return;
-        move--;
-        var h = history.pop();
-        for(let i = 0; i < h.length; i += 2)
-          arr[h[i]][h[i + 1]] = true;
-        rollback.push(h);
-        break;
-      case 89: // 'Y' redoes last moves
-        if(!rollback.length) return;
-        move++;
-        h = rollback.pop();
-        for(let i = 0; i < h.length; i += 2)
-          arr[h[i]][h[i + 1]] = false;
-        history.push(h);
-        break;
+      }
+    if (!filled)
+      for (const row of narr) // where are the brackets, you ask?
+        row.splice(j, 1); // I ate them for breakfast.
+  }
+  return narr;
+}
+function take(board, x0, y0, x1, y1) {
+  const removed = [];
+  for (let i = x0; i <= x1; i++)
+    for (let j = y0; j <= y1; j++)
+      if (board[i][j]) {
+        board[i][j] = 0;
+        removed.push(i, j);
+      }
+  if(removed.length) { // save to history and reset rollback
+    history.push(removed);
+    rollback.length = 0;
+  }
+  return removed.length; // == 0 is an invalid move
+}
+function takeFast(board, x0, y0, x1, y1) { // use this for AI's virtual take()
+  for(let i = x0; i <= x1; i++)
+    for(let j = y0; j <= y1; j++)
+      board[i][j] = 0;
+}
+function loadPosition(x = +load.value) {
+  if(typeof x == 'object') x = +load.value; // case when called from event listener
+  if(x < 9) return;
+  reset();
+  const newBoard = intToBoard(x);
+  for(let i = s; i--;)
+    if(newBoard[i])
+      for(let j = s; j--;)
+        board[i][j] = newBoard[i][j] || 0;
+    else
+      board[i].fill(0);
+  load.value = '';
+  update();
+}
+function undo() {
+  if(!history.length) return;
+  turn--;
+  const removed = history.pop();
+  for(let i = 0; i < removed.length; i += 2)
+    board[removed[i]][removed[i + 1]] = 1;
+  rollback.push(removed);
+  update();
+}
+function redo() {
+  if(!rollback.length) return;
+  turn++;
+  const previous = rollback.pop();
+  for(let i = 0; i < previous.length; i += 2)
+    board[previous[i]][previous[i + 1]] = 0;
+  history.push(previous);
+  update();
+}
+function reset() {
+  board.forEach(e => e.fill(1));
+  history.length = rollback.length = 0;
+  turn = 2;
+  current.value = 4398046511094;
+  info.textContent = '(?, ?), (?, ?), %50'
+  draw();
+}
+function update() {
+  current.value = boardToInt(shrink(board));
+  draw();
+}
+function isPrimitive(board, x0, y0, x1, y1) { // finds if a move on board has no equivalent move
+  if (x0 == x1 && y0 == y1) return !!board[x0][y0]; // with smaller area
+  let x0Empty = true, x1Empty = true, y0Empty = true, y1Empty = true;
+  for (let j = y1; j >= y0; j--) {
+    if (board[x0][j]) x0Empty = false;
+    if (board[x1][j]) x1Empty = false;
+  }
+  for (let i = x1; i >= x0; i--) {
+    if (board[i][y0]) y0Empty = false;
+    if (board[i][y1]) y1Empty = false;
+  }
+  return !(x0Empty || x1Empty || y0Empty || y1Empty); // basically gets rid of duplicate moves
+}
+function time(board, depth = +lvl.value) { // testing how long the AI takes
+  console.time('AI' + depth);
+  AI(board, depth);
+  console.timeEnd('AI' + depth);
+}
+function randomMove() {
+  const moves = [];
+  for(let i = s; i--;)
+    for(let j = s; j--;)
+      if(board[i][j]) moves.push([i, j]);
+  return moves[Math.random() * moves.length | 0];
+}
+// Warning: The following huge, recursive, spaghetti AI code is still a work in progress.
+// Only keep reading if you are or are accompanied by a senior JavaScript developer.
+function AI(board, depth) { // literally a bunch of if statements
+  const filledX = [], filledY = [];
+  if(depth < +lvl.value) { // only the first run needs the full board
+    var shrunk = board; // otherwise just assume board is already shrunk by last AI() call
+    filledX.push(...board.keys());
+    filledY.push(...board[0].keys());
+  } else
+    var shrunk = shrink(board, filledX, filledY);
+  if(!filledX.length)
+    return ['?','?','?','?',-1,'EmptyW']; // no pieces on the board, did we already win?
+  const losingIndex = binSearch(boardToInt(shrunk)), sums = new Uint8Array(8),
+    maxX = shrunk.length - 1, maxY = shrunk[0].length - 1;
+  // sums[] will hold the bit representations of the 4 sides and then 1 layer underneath each of the 4 sides
+  let x0 = filledX[0], y0 = filledY[0], x1 = filledX[maxX], y1 = filledY[maxY];
+  if(maxX == 0) {
+    if(maxY == 0)
+      return [x0, y0, x0, y0, losing.length * 2 + 1, '1x1L']; // one piece on the board
+    return [x0, filledY[1], x1, y1, 0, 'nx1W']; // one vertical row on the board
+  }
+  if(maxY == 0)
+    return [filledX[1], y0, x1, y1, 0, '1xnW']; // one horizontal row on the board
+  if(losingIndex >= 0) { // at this point there must be at least 2x2=4 squares left
+    for(let i = maxX; --i;)   // This will try to return a square not on the border
+      for(let j = maxY; --j;) // This is also suboptimal, doesn't check for outer border count
+        if(shrunk[i][j])      // No good either, will still not find better response
+          return [filledX[i], filledY[j], filledX[i], filledY[j], losing.length * 2 - losingIndex, `Dict${losingIndex}CL`];
+    [x0, y0] = randomMove(); // This might give suboptimal replies
+    return [x0, y0, x0, y0, losing.length * 2 - losingIndex, `Dict${losingIndex}RL`];
+  }
+  // without the following checks, AI() takes even longer...
+  for(let i = maxX + 1; i--;) { // filling sums[]
+    sums[0] = (sums[0] << 1) | shrunk[i][0]; // top row
+    sums[4] = (sums[4] << 1) | shrunk[i][1]; // 2nd top row
+    sums[5] = (sums[5] << 1) | shrunk[i][maxY - 1]; // 2nd bottom row
+    sums[1] = (sums[1] << 1) | shrunk[i][maxY]; // bottom row
+  }
+  for(let j = maxY + 1; j--;) {
+    sums[2] = (sums[2] << 1) | shrunk[0][j]; // left column
+    sums[6] = (sums[6] << 1) | shrunk[1][j]; // 2nd left column
+    sums[7] = (sums[7] << 1) | shrunk[maxX - 1][j]; // 2nd right column
+    sums[3] = (sums[3] << 1) | shrunk[maxX][j]; // right column
+  }
+  for(let i = 8; i--;) { // add extra bits of information about # of pieces left on each row
+    const rx = r(sums[i]); // highest bit set: 1 piece left. second highest: 2 pieces left.
+    sums[i] |= ((rx == 0) + (r(rx) == 0)) << s; // this breaks for s > 6
+  }
+  for(let i = 4; i--;) { // Crazy optimizations going on here
+    if(sums[i] & 128 || sums[i] & 64 && sums[i] == sums[i | 4]) { // check if a side is
+      const shift = 2 - (sums[i] >>> 7); // reducible to 2x2 or 1x1
+      switch(i) { // move the corresponding side inward depending on # of bits left
+        case 0:
+          y0 = filledY[shift];
+          break;
+        case 1:
+          y1 = filledY[maxY - shift];
+          break;
+        case 2:
+          x0 = filledX[shift];
+          break;
+        default: // case 3:
+          x1 = filledX[maxX - shift];
+      }                                    // 0: 1x1 (winning), 1: 2x2 (winning)
+      return [x0, y0, x1, y1, shift - 1, `${shift}x${shift}:${shift - 1 << 2 | i}W`];
     }
-    if(!(move & 1) && p1ai.checked) AI(arr, +searchBreadth); // are these just not working
-    else if((move & 1) && p2ai.checked) AI(arr, +searchBreadth); // FIXME: AI doesn't update automatically
-    else info.innerText = '';
-  });
-  timer = requestAnimationFrame(draw);
-  //cancelAnimationFrame(timer);
+  }
+  if(sums[0] & 64 && sums[0] == sums[1]) // check if top row == bottom row
+    return [x0, filledY[1], x1, filledY[maxY - 1], 1, '2x2TBW'];
+  if(sums[2] & 64 && sums[2] == sums[3]) // check if left column == right column
+    return [filledX[1], y0, filledX[maxX - 1], y1, 1, '2x2LRW'];
+  if(depth < 1) { // base case for recursion ends here: random move
+    [x0, y0] = randomMove();
+    return [x0, y0, x0, y0, losing.length, 'FastR'];
+  }
+  let bestRating = losing.length << 1, moves = []; // Now we go through every possible move
+  for (const rx1 of filledX) // Not sure how to optimize skipping moves that are already checked
+    for (const ry1 of filledY) // also, quadruple nested for loops :D
+      for (const rx0 of filledX) // Sorry
+        for (const ry0 of filledY)
+          if (rx1 >= rx0 && ry1 >= ry0 && isPrimitive(board, rx0, ry0, rx1, ry1)) { // remove duplicates
+            const newBoard = clone(board);
+            takeFast(newBoard, rx0, ry0, rx1, ry1); // simulate making the move
+            const s = shrink(newBoard), i = boardToInt(s), b = binSearch(i); // check if new position is losing
+            if(b >= 0) // since losing moves are relatively rare, return when encountering any
+              return [rx0, ry0, rx1, ry1, b, 'DictW']; // although there *may* be an even better move.
+            if((i & 56) > 16 && (i & 7) > 2) { // basic restrictions on a move: can't leave only 2 rows
+              const rating = losing.length * 2 - AI(s, depth - 1)[4]; // recursive evaluation
+              if(rating < bestRating) { // if the new rating is better, remove all previous ones
+                bestRating = rating;
+                moves = [[rx0, ry0, rx1, ry1]];
+              } else if(rating == bestRating) // otherwise add this move
+                moves.push([rx0, ry0, rx1, ry1]);
+            }
+          }
+  [x0, y0, x1, y1] = moves[Math.random() * moves.length | 0]; // random best move
+  //if(depth == 2 && learning.checked && bestRating > losing.length)
+  return [x0, y0, x1, y1, bestRating, 'BestR']; // coordinates, rating, and how the move was found
+}
+// Event listeners, they kind of work most of the time.
+c.addEventListener('mousedown', e => {
+  if(!animation) {
+    mouse.sx = mouse.ex = e.offsetX;
+    mouse.sy = mouse.ey = e.offsetY;
+    mouse.down = true;
+  }
+});
+c.addEventListener('mousemove', e => {
+  if(mouse.down && !animation) {
+    mouse.ex = e.offsetX; mouse.ey = e.offsetY;
+  }
+});
+function mouseUp() { // Detects if a move has been made
+  mouse.down = false;
+  const x0 = Math.min(mouse.sx, mouse.ex) / l >>> 1, // pixel to coords
+        y0 = Math.min(mouse.sy, mouse.ey) / l >>> 1,
+    x1 = Math.max(mouse.sx, mouse.ex) / l - 1 >>> 1,
+    y1 = Math.max(mouse.sy, mouse.ey) / l - 1 >>> 1;
+  if(take(board, x0, y0, x1, y1)) { // if valid move
+    turn++;
+    if(board.every(e => e.every(f => !f))) {
+      if(confirm(`Player ${1 + (turn & 1)} won in ${turn >>> 1} moves!\nStart a new game?`)) {
+        reset();
+        if(auto.checked && p1ai.checked) {
+          const rand = randomMove();
+          animate(rand.concat(rand)); // No reason to attempt calculating the first move
+        }
+      }
+    } else if(turn & p2ai.checked || ~turn & p1ai.checked) {
+      const move = AI(board, +lvl.value);
+      if(analyze.checked)
+        info.textContent = `(${move[0]}, ${move[1]}), (${move[2]}, ${move[3]}), ${losing.length - move[4]} (${move[5]})`;
+      else
+        info.textContent = '';
+      if(auto.checked)
+        animate(move);
+    }
+    current.value = boardToInt(shrink(board));
+  }
+  draw();
+};
+c.addEventListener('mouseup', e => {
+  if(!animation) mouseUp();
+});
+c.addEventListener('mouseout', e => {
+  if(!animation) {
+    mouse.down = false;
+    draw();
+  }
+});
+once.addEventListener('click', e => { // generate a single AI move
+  const move = AI(board, +lvl.value);
+  info.textContent = `(${move[0]}, ${move[1]}), (${move[2]}, ${move[3]}), ${losing.length - move[4]} (${move[5]})`;
+});
+undoBtn.addEventListener('click', undo);
+redoBtn.addEventListener('click', redo);
+resetBtn.addEventListener('click', e => {
+  const x = +current.value;
+  if(x == 0 || x != 4398046511094 && confirm('Are you sure to restart the game?'))
+    reset();
+});
+load.addEventListener('click', loadPosition);
+load.addEventListener('blur', loadPosition); // these two usually covers it
+document.addEventListener('keydown', e => { // key listener
+  if(e.ctrlKey) return;
+  switch(e.keyCode) {
+    case 82: // 'R'
+      if(confirm('Are you sure to restart the game?'))
+        reset();
+      break;
+    case 90: // 'Z'
+      undo();
+      break;
+    case 89: // 'Y'
+      redo();
+      break;
+  }
+});
+function draw() { // paint cycle
+  t.clearRect(0, 0, 650, 650);
+  const x0 = Math.min(mouse.sx, mouse.ex),
+        y0 = Math.min(mouse.sy, mouse.ey),
+    x1 = Math.max(mouse.sx, mouse.ex),
+    y1 = Math.max(mouse.sy, mouse.ey);
+  for(let i = s; i--;) {
+    for(let j = s; j--;) {
+      const x = (i << 1 | 1) * l, y = (j << 1 | 1) * l;
+      if(board[i][j]) { // AABB collision check
+        if(mouse.down && x0 < x + l && x < x1 && y0 < y + l && y < y1) t.fillStyle = '#999';
+        else t.fillStyle = '#eee';
+        t.fillRect(x, y, l, l);
+      }
+      t.fillStyle = '#555';
+      t.fillText(i + ', ' + j, x + 25, y + 25);
+    }
+  }
+  if(mouse.down)
+    t.strokeRect(mouse.sx, mouse.sy, mouse.ex - mouse.sx, mouse.ey - mouse.sy);
+}
+draw();
+function frame() { // to improve performance, don't draw when nothing is happening
+  if(mouse.down || animation) draw();
+  timer = requestAnimationFrame(frame);
+}
+function animate(move) { // AI animation
+  mouse.down = true; // simulates user input and blocks actual user input by setting animation
+  mouse.sx = mouse.ex = move[0] * 100 + 20; // to a truthy value
+  mouse.sy = mouse.ey = move[1] * 100 + 20;
+  const x = move[2] * 100 + 130, y = move[3] * 100 + 130;
+  animation = setInterval(() => {
+    if(mouse.ex < x) mouse.ex++;
+    if(mouse.ey < y) mouse.ey++;
+    if(mouse.ex == x && mouse.ey == y) {
+      clearInterval(animation);
+      animation = false;
+      mouseUp();
+    }
+  }, 4)
+}
+timer = requestAnimationFrame(frame);
   </script>
 </body>
 </html>
