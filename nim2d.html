@@ -46,18 +46,19 @@
       margin-left: -20vw;
       width: 40vw;
     }
-    #h, #o { width: 27vw; }
+    #h, #o { width: 28vw; }
     #h { left: 1vw; }
     #o { right: 1vw; }
-
   }
   body { background-color: #1f1f1f; color: #eee; position: absolute; left: 0; top: 0; margin: 0; width: 100%; font-size: 2vmin; }
   input { font-size: 1.5vmin; }
   canvas { position: relative; width: 650px; height: 650px; left: 50%; top: 0; margin-left: -325px; box-shadow: 0 0 1vmin 1vmin #000; }
   #f, h2, h3 { text-align: center; margin-top: 0; }
+  #h { line-height: 150%; }
   h2 { font-size: 4vmin; }
   h3 { font-size: 3vmin; }
   a:link, a:visited { color: inherit; text-decoration: underline; }
+  #lvl { max-width: 6vw; }
   </style>
 </head>
 <body>
@@ -66,8 +67,9 @@
     <h3>Options</h3>
     <form autocomplete="on">
       <p>Use AI: <input type="checkbox" id="p1ai" /><label for="p1ai">Player 1</label> &nbsp; <input type="checkbox" id="p2ai" /><label for="p2ai">Player 2</label> &nbsp; <input type="button" value="Once" id="once" /></p>
-      <p>AI level: Weak <input type="range" id="lvl" min="0" max="2" step="1" value="2" /> Strong</p>
+      <p>AI level: Weak <input type="range" id="lvl" min="0" max="2" step="1" value="1" /> Strong</p>
       <p><input type="checkbox" id="analyze" checked="true" /><label for="analyze">Show analysis</label> &nbsp; <input type="checkbox" id="auto" /><label for="auto">Auto move</label></p>
+      <p><input type="checkbox" id="learning" /><label for="learning">Enable learning (experimental)</label></p>
       <p><input type="button" id="undoBtn" value="Undo (Z)" />
       <input type="button" id="redoBtn" value="Redo (Y)" />
       <input type="button" id="resetBtn" value="Reset (R)" /></p>
@@ -80,7 +82,7 @@
     <h3>Help</h3>
     1. Players 1 and 2 each draws a rectangle of squares (at least 1) to remove each turn.<br />
     2. The player who has to remove the last square loses.<br />
-    3. To cancel the current move, move the mouse button outside the board and release the mouse.<br />
+    3. To cancel the current move, move the mouse button outside the board.<br />
     4. Hints: (if you play perfectly)<br />
     &nbsp; - If you leave your opponent with a 2x2 square, you're winning.<br />
     &nbsp; - If your opponent leaves you with a 3x3 square, take the center or one of the corners.<br />
@@ -91,22 +93,22 @@
   </div>
   <script type="text/javascript">'use strict';
 /* Move rating:
--1: The board is empty.
-0: This move leaves the opponent with an 1x1 square.
-1: This move leaves the opponent with a 2x2 square.
-1 to losing.length - 1: This move leaves the opponent with a position in the losing dictionary.
+-1: The board is empty. (EmptyW)
+0: This move leaves the opponent with an 1x1 square. (1x1W)
+1: This move leaves the opponent with a 2x2 square. (2x2W)
+1 to losing.length - 1: This move leaves the opponent with a position in the losing dictionary. (DictW)
 Lower is better, since it's closer to the 2x2 square.
-losing.length: This is a random 1x1 move.
-losing.length + 1 to losing.length * 2 - 1: This move gives the opponent the opportunity to leave you with a position in the losing dictionary.
+losing.length: This is a random 1x1 move. (FastR, BestR)
+losing.length + 1 to losing.length * 2 - 1: This move gives the opponent the opportunity to leave you with a position in the losing dictionary. (BestL, Dict#L)
 Lower is better, since the index away from 2x2 square is subtracted from the rating.
 losing.length * 2 - 1: This move is one move away from a 2x2 square.
 losing.length * 2: This move is one move away from an 1x1 square.
-losing.length * 2 + 1: This move takes everything. Last, only possible, losing move.
+losing.length * 2 + 1: This move takes everything. Last, only possible, losing move. (1x1L)
 Any other value: Error
 */
 let timer, animation = false, turn = 2, then = 0;
-const s = 6, l = 50, board = new Array(s), losing = Int32Array.of(73,978,14683,15259,16347,21403,22491,22747,24027,25435,27355,28635,30555,31707,32091,32475,32667,59164,91804,104867,115619,121315,124764,125411,151388,160476,163804,169443,170467,173404,181219,181731,182108,189276,190364,193116,196579,202979,206044,209891,213731,214748,216668,218083,221916,222684,235427,235875,236451,238435,239324,239971,243683,246627,248547,249059,253916,257507,261084,261724,261987,811812,919332,926052,942500,942948,944036,1335972,1443492,1450212,1467108,1467812,1598052,1599268,1705572,1713380,1722276,1728996,1729892,1730212,1730532,1860452,1861540,1967972,1975140,1975716,1976036,1991268,1991588,1992164,1992484,2384292,2385828,2491812,2500068,2639652,2646372,2753892,2770788,2778532,2901924,2909092,2909988,3016612,3024228,3039716,3041124,3163812,3170532,3278052,3294628,3294948,3302884,3432932,3434148,3540452,3547620,3548388,3557284,3565284,3688164,3695332,3696036,3696484,3802852,3810788,3818980,3819108,3826916,3827620,3957732,4065252,4089252,4089828), // 134 sorted losing positions
-  history = [], rollback = [],
+const s = 6, l = 50, board = new Array(s), losing = [73,978,14683,15259,16347,21403,22491,22747,24027,25435,27355,28635,30555,31707,32091,32475,32667,59164,91804,104867,115619,121315,124764,125411,151388,160476,163804,169443,170467,173404,181219,181731,182108,189276,190364,193116,196579,202979,206044,209891,213731,214748,216668,218083,221916,222684,235427,235875,236451,238435,239324,239971,243683,246627,248547,249059,253916,257507,261084,261724,261987,811812,919332,926052,942500,942948,944036,1335972,1443492,1450212,1467108,1467812,1598052,1599268,1705572,1713380,1722276,1728996,1729892,1730212,1730532,1860452,1861540,1967972,1975140,1975716,1976036,1991268,1991588,1992164,1992484,2384292,2385828,2491812,2500068,2639652,2646372,2753892,2770788,2778532,2901924,2909092,2909988,3016612,3024228,3039716,3041124,3163812,3170532,3278052,3294628,3294948,3302884,3432932,3434148,3540452,3547620,3548388,3557284,3565284,3688164,3695332,3696036,3696484,3802852,3810788,3818980,3819108,3826916,3827620,3957732,4065252,4089252,4089828], // 134 sorted losing positions
+  hist = [], rollback = [],
   clone = board => board.map(x => x.slice()),
   sum = row => row.reduce((a, b) => a + b),
   r = x => x & x - 1, // check if x has only 1 bit set (bithack used in sideways addition)
@@ -197,10 +199,24 @@ function intToBoard(int) {
   }
   return board;
 }
-/*// Unused
-function binaryTranspose(int) {
-  const w = int >>> 3 & 7, h = int & 7;
+/*// doesn't work yet
+function binaryTransform(int) {
+  const mask = int & 63, w = mask >> 3, h = mask & 7, maskW = (1 << w) - 1, transforms = [];
+  let maskH = 0, fx = 0, fy = 0, fxy = 0;
+  int = Math.floor(int / 64);
+  for(let i = h; i--;) {
+    maskH |= 1 << i * w;
+    fy |= ((int >>> i * w) & maskW) << (h - i) * w;
+  }
+  for(let i = w; i--;) {
+    fx |= (int & maskH << i) >>> i;
+    fxy |= (fy & maskH << i) >>> i;
+  }
+  transforms.push(fx * 64 + mask, fy * 64 + mask, fxy * 64 + mask);
+  return transforms;
 }
+*/
+/*// Unused
 class Move {
   constructor(board, x0, y0, x1 = x0, y1 = y0) {
     this.old = board;
@@ -290,7 +306,7 @@ function take(board, x0, y0, x1, y1) {
         removed.push(i, j);
       }
   if(removed.length) { // save to history and reset rollback
-    history.push(removed);
+    hist.push(removed);
     rollback.length = 0;
   }
   return removed.length; // == 0 is an invalid move
@@ -299,6 +315,16 @@ function takeFast(board, x0, y0, x1, y1) { // use this for AI's virtual take()
   for(let i = x0; i <= x1; i++)
     for(let j = y0; j <= y1; j++)
       board[i][j] = 0;
+}
+function loadStorage() { // load losing moves the AI found on its own from localStorage
+  if(localStorage.L) {
+    const pos = localStorage.L.split(',');
+    for(let i = pos.length; --i;) {
+      const int = pos[i], index = binSearch(int);
+      if(index < 0)
+        losing.splice(-index - 1, 0, int);
+    }
+  } else localStorage.L = '';
 }
 function loadPosition(x = +load.value) {
   if(typeof x == 'object') x = +load.value; // case when called from event listener
@@ -315,9 +341,9 @@ function loadPosition(x = +load.value) {
   update();
 }
 function undo() {
-  if(!history.length) return;
+  if(!hist.length) return;
   turn--;
-  const removed = history.pop();
+  const removed = hist.pop();
   for(let i = 0; i < removed.length; i += 2)
     board[removed[i]][removed[i + 1]] = 1;
   rollback.push(removed);
@@ -329,12 +355,12 @@ function redo() {
   const previous = rollback.pop();
   for(let i = 0; i < previous.length; i += 2)
     board[previous[i]][previous[i + 1]] = 0;
-  history.push(previous);
+  hist.push(previous);
   update();
 }
 function reset() {
   board.forEach(e => e.fill(1));
-  history.length = rollback.length = 0;
+  hist.length = rollback.length = 0;
   turn = 2;
   current.value = 4398046511094;
   info.textContent = '(?, ?), (?, ?), %50'
@@ -381,7 +407,7 @@ function AI(board, depth) { // literally a bunch of if statements
     var shrunk = shrink(board, filledX, filledY);
   if(!filledX.length)
     return ['?','?','?','?',-1,'EmptyW']; // no pieces on the board, did we already win?
-  const losingIndex = binSearch(boardToInt(shrunk)), sums = new Uint8Array(8),
+  const int = boardToInt(shrunk), losingIndex = binSearch(int), sums = new Uint8Array(8),
     maxX = shrunk.length - 1, maxY = shrunk[0].length - 1;
   // sums[] will hold the bit representations of the 4 sides and then 1 layer underneath each of the 4 sides
   let x0 = filledX[0], y0 = filledY[0], x1 = filledX[maxX], y1 = filledY[maxY];
@@ -465,7 +491,21 @@ function AI(board, depth) { // literally a bunch of if statements
             }
           }
   [x0, y0, x1, y1] = moves[Math.random() * moves.length | 0]; // random best move
-  //if(depth == 2 && learning.checked && bestRating > losing.length)
+  if(depth == 2 && learning.checked && bestRating > losing.length) {
+    localStorage.L += ',' + int;
+    losing.splice(-losingIndex - 1, 0, int);
+    /*// later
+    if(int <= 2147483647) {
+      const transforms = binaryTransform(int);
+      for(let i = transforms.length; i--;) {
+        const b = binSearch(transforms[i]);
+        if(b < 0)
+          losing.splice(-b - 1, 0, transforms[i]);
+      }
+    }
+    //*/
+    return [x0, y0, x1, y1, bestRating, 'BestL'];
+  }
   return [x0, y0, x1, y1, bestRating, 'BestR']; // coordinates, rating, and how the move was found
 }
 // Event listeners, they kind of work most of the time.
@@ -511,7 +551,7 @@ function mouseUp() { // Detects if a move has been made
   draw();
 };
 c.addEventListener('mouseup', e => {
-  if(!animation) mouseUp();
+  if(mouse.down && !animation) mouseUp();
 });
 c.addEventListener('mouseout', e => {
   if(!animation) {
@@ -523,11 +563,21 @@ once.addEventListener('click', e => { // generate a single AI move
   const move = AI(board, +lvl.value);
   info.textContent = `(${move[0]}, ${move[1]}), (${move[2]}, ${move[3]}), ${losing.length - move[4]} (${move[5]})`;
 });
+learning.addEventListener('click', e => {
+  if(learning.checked) {
+    if(confirm('This feature requires maximum AI strength and localStorage, consumes more memory and may decrease \
+performance. Enable anyways?')) {
+      lvl.value = 2;
+      loadStorage();
+    } else learning.checked = false;
+  } else if(confirm(`Clear localStorage (${localStorage.L.length} bytes)?`))
+    localStorage.L = '';
+})
 undoBtn.addEventListener('click', undo);
 redoBtn.addEventListener('click', redo);
 resetBtn.addEventListener('click', e => {
   const x = +current.value;
-  if(x == 0 || x != 4398046511094 && confirm('Are you sure to restart the game?'))
+  if(!x || x != 4398046511094 && confirm('Are you sure to restart the game?'))
     reset();
 });
 load.addEventListener('click', loadPosition);
@@ -536,7 +586,8 @@ document.addEventListener('keydown', e => { // key listener
   if(e.ctrlKey) return;
   switch(e.keyCode) {
     case 82: // 'R'
-      if(confirm('Are you sure to restart the game?'))
+      const x = +current.value;
+      if(!x || x != 4398046511094 && confirm('Are you sure to restart the game?'))
         reset();
       break;
     case 90: // 'Z'
@@ -565,6 +616,7 @@ function draw() { // paint cycle
       t.fillText(i + ', ' + j, x + 25, y + 25);
     }
   }
+  t.fillText(`${animation ? 'AI' : 'Player'} ${(turn & 1) + 1}, move ${turn >> 1}`, 325, 625);
   if(mouse.down)
     t.strokeRect(mouse.sx, mouse.sy, mouse.ex - mouse.sx, mouse.ey - mouse.sy);
 }
@@ -588,6 +640,7 @@ function animate(move) { // AI animation
     }
   }, 4)
 }
+if(learning.checked) loadStorage();
 timer = requestAnimationFrame(frame);
   </script>
 </body>

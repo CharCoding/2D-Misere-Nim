@@ -1,44 +1,40 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>2D Misère Nim</title>
-	<meta charset="utf-8" />
-	<link rel="stylesheet" href="nim2d.css" type="text/css" />
+  <title>2D Misère Nim</title>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="nim2d.css" type="text/css" />
 </head>
 <body>
-	<span id="info"></span>
-	<h1 class="header">2D Misère <a href="https://en.wikipedia.org/wiki/Nim" alt="Original Nim game">Nim</a></h2>
-	<div class="canvas">
-		<canvas id="c" width="650" height="650"></canvas>
-	</div>
-	<div class="intro">
-		<h2 style="margin-top: -5px;">Introduction</h2>
-		<h3 style="margin-top: -5px;">Rules</h3>
-		1. Player 1 and 2 each remove a rectangle of pieces each turn.
-			- Doesn't matter if some pieces within the rectangle are already removed.
-		2. Each player must remove at least 1 piece from the board.
-		3. The person who has to remove the last piece loses.
-		<h3>How to play</h3>
-		- Hold down the mouse on the board and drag it to select pieces you want to remove. (highlighted in yellow)
-			- If you want to cancel it, move the mouse button outside the board and release the mouse.
-		- Release the mouse to remove those pieces and hand the turn to the opponent.
-		- This game is really hard to play perfectly, so take your time and think about your opponent's possible moves.
-		- Press Z to undo, Y to redo, R to reset (please don't cheat though)
-		- If you enable the AI, please remove the squares it tells you on its turns. The AI isn't <i>that</i> smart. <b>Yet.</b>
-		<h3>Hints (if you play perfectly)</h3>
-		a. If you leave your opponent with a 2x2 square, you're winning.
-		b. If your opponent leaves you with a 3x3 square, you're winning.
-			- Take the center or one of the corners.
-		c. If your opponent leaves you with a 3x4 square, you're winning.
-			- Take the middle 2 from the long edge on either side.
-	</div>
-	<div class="ai">
-	<h2 class="ai">AI (bot) controls</h2>
-  <input type="checkbox" id="p1ai" autocomplete="off" /><label for="p1ai">AI for Player 1</label>
-  <input type="checkbox" id="p2ai" autocomplete="off" /><label for="p2ai">AI for Player 2</label>
-  AI random search tries: <input type="number" id="searchBreadth" value="100" min="0" max="441" step="1" style="width: 60px;" />
-	</div>
-	<p class="footer">Original <a href="http://github.com/CharCoding/2D-Misere-Nim/" alt="View source">code</a> from <a href="http://github.com/CharCoding/">CharCoding</a>, styles and some functions from <a href="https://gitlab.com/diamondburned/">diamondburned</a></p>
-  <script type="text/javascript" src="src/nim2d.js"></script>
+  <div id="p"><h2>2D Misère <a href="https://en.wikipedia.org/wiki/Nim">Nim</a></h2><canvas id="c" width="650" height="650"></canvas></div>
+  <div id="o">
+    <h3>Options</h3>
+    <form autocomplete="on">
+      <p>Use AI: <input type="checkbox" id="p1ai" /><label for="p1ai">Player 1</label> &nbsp; <input type="checkbox" id="p2ai" /><label for="p2ai">Player 2</label> &nbsp; <input type="button" value="Once" id="once" /></p>
+      <p>AI level: Weak <input type="range" id="lvl" min="0" max="2" step="1" value="1" /> Strong</p>
+      <p><input type="checkbox" id="analyze" checked="true" /><label for="analyze">Show analysis</label> &nbsp; <input type="checkbox" id="auto" /><label for="auto">Auto move</label></p>
+      <p><input type="checkbox" id="learning" /><label for="learning">Enable learning (experimental)</label></p>
+      <p><input type="button" id="undoBtn" value="Undo (Z)" />
+      <input type="button" id="redoBtn" value="Redo (Y)" />
+      <input type="button" id="resetBtn" value="Reset (R)" /></p>
+      <p>Current position #: <input type="number" min="9" max="4398046511103" step="1" readonly="true" id="current" value="4398046511094" autocomplete="off" /></p>
+      <p>Load position: <input type="number" min="9" max="4398046511103" step="1" id="load" placeholder="Click to load" autocomplete="off" /></p>
+      <p id="info">AI analysis will be shown here.</p>
+    </form>
+  </div>
+  <div id="h">
+    <h3>Help</h3>
+    1. Players 1 and 2 each draws a rectangle of squares (at least 1) to remove each turn.<br />
+    2. The player who has to remove the last square loses.<br />
+    3. To cancel the current move, move the mouse button outside the board.<br />
+    4. Hints: (if you play perfectly)<br />
+    &nbsp; - If you leave your opponent with a 2x2 square, you're winning.<br />
+    &nbsp; - If your opponent leaves you with a 3x3 square, take the center or one of the corners.<br />
+    &nbsp; - If your opponent leaves you with a 3x4 rectangle, take the middle 2 from the long edge on either side.<br />
+    &nbsp; - If your opponent leaves you with a 4x4 square, take the 4 center pieces.<br />
+    &nbsp; - Take your time to think! This is a simple game but it is not easy!<hr />
+    <p id="f"><a href="https://github.com/CharCoding/2D-Misere-Nim/">2D Misère Nim</a> by <a href="https://github.com/CharCoding/">CharCoding</a>, © 2018.</p>
+  </div>
+  <script src="src/nim2d.min.js"></script>
 </body>
 </html>
