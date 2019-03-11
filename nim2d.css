@@ -1,55 +1,55 @@
 @media (max-aspect-ratio: 4/3) {
   div {
-      position: relative;
-      left: 50%;
-      width: 90vw;
-      margin-left: -45vw;
-    }
-    #p { height: 80vh; }
-    #o p { display: inline-block; margin: 1vmin 3vmin; }
+    position: relative;
+    left: 50%;
+    width: 90vw;
+    margin-left: -45vw;
   }
-  @media (min-aspect-ratio: 4/3) and (max-aspect-ratio: 16/9) {
-    div { position: absolute; }
-    #p {
-      top: 1vw;
-      left: 5vw;
-      width: 50vw;
-      height: 80vh;
-    }
-    #o {
-      top: 1vw;
-      right: 5vw;
-      width: 35vw;
-      height: 80vh;
-    }
-    #h {
-      left: 5vw;
-      top: 80vh;
-      width: 90vw;
-    }
+  #p { height: 80vh; }
+  #o p { display: inline-block; margin: 1vmin 3vmin; }
+}
+@media (min-aspect-ratio: 4/3) and (max-aspect-ratio: 16/9) {
+  div { position: absolute; }
+  #p {
+    top: 1vw;
+    left: 5vw;
+    width: 50vw;
+    height: 80vh;
   }
-  @media (min-aspect-ratio: 16/9) {
-    div {
-      position: absolute;
-      top: 1vw;
-      bottom: 5vw;
-      height: 40vw;
-    }
-    #p {
-      left: 50%;
-      margin-left: -20vw;
-      width: 40vw;
-    }
-    #h, #o { width: 28vw; }
-    #h { left: 1vw; }
-    #o { right: 1vw; }
+  #o {
+    top: 1vw;
+    right: 5vw;
+    width: 35vw;
+    height: 80vh;
   }
-  body { background-color: #1f1f1f; color: #eee; position: absolute; left: 0; top: 0; margin: 0; width: 100%; font-size: 2vmin; }
-  input { font-size: 1.5vmin; }
-  canvas { position: relative; width: 650px; height: 650px; left: 50%; top: 0; margin-left: -325px; box-shadow: 0 0 1vmin 1vmin #000; }
-  #f, h2, h3 { text-align: center; margin-top: 0; }
-  #h { line-height: 150%; }
-  h2 { font-size: 4vmin; }
-  h3 { font-size: 3vmin; }
-  a:link, a:visited { color: inherit; text-decoration: underline; }
-  #lvl { max-width: 6vw; }
+  #h {
+    left: 5vw;
+    top: 80vh;
+    width: 90vw;
+  }
+}
+@media (min-aspect-ratio: 16/9) {
+  div {
+    position: absolute;
+    top: 1vw;
+    bottom: 5vw;
+    height: 40vw;
+  }
+  #p {
+    left: 50%;
+    margin-left: -20vw;
+    width: 40vw;
+  }
+  #h, #o { width: 28vw; }
+  #h { left: 1vw; }
+  #o { right: 1vw; }
+}
+body { background-color: #1f1f1f; color: #eee; position: absolute; left: 0; top: 0; margin: 0; width: 100%; font-size: 2vmin; }
+input, button { font-size: 1.5vmin; }
+canvas { position: relative; width: 650px; height: 650px; left: 50%; top: 0; margin-left: -325px; box-shadow: 0 0 1vmin 1vmin #000; }
+#f, h2, h3 { text-align: center; margin-top: 0; }
+#h { line-height: 150%; }
+h2 { font-size: 4vmin; }
+h3 { font-size: 3vmin; }
+a:link, a:visited { color: inherit; text-decoration: underline; }
+#lvl { max-width: 6vw; }

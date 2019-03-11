@@ -9,17 +9,16 @@
   <div id="p"><h2>2D Misère <a href="https://en.wikipedia.org/wiki/Nim">Nim</a></h2><canvas id="c" width="650" height="650"></canvas></div>
   <div id="o">
     <h3>Options</h3>
-    <form autocomplete="on">
-      <p>Use AI: <input type="checkbox" id="p1ai" /><label for="p1ai">Player 1</label> &nbsp; <input type="checkbox" id="p2ai" /><label for="p2ai">Player 2</label> &nbsp; <input type="button" value="Once" id="once" /></p>
+    <form autocomplete="on" onsubmit="return false;">
+      <p>Use AI: <input type="checkbox" id="p1ai" /><label for="p1ai">Player 1</label> &nbsp; <input type="checkbox" id="p2ai" /><label for="p2ai">Player 2</label> &nbsp; <button id="once"><u>O</u>nce</button></p>
       <p>AI level: Weak <input type="range" id="lvl" min="0" max="2" step="1" value="1" /> Strong</p>
       <p><input type="checkbox" id="analyze" checked="true" /><label for="analyze">Show analysis</label> &nbsp; <input type="checkbox" id="auto" /><label for="auto">Auto move</label></p>
       <p><input type="checkbox" id="learning" /><label for="learning">Enable learning (experimental)</label></p>
-      <p><input type="button" id="undoBtn" value="Undo (Z)" />
-      <input type="button" id="redoBtn" value="Redo (Y)" />
-      <input type="button" id="resetBtn" value="Reset (R)" /></p>
-      <p>Current position #: <input type="number" min="9" max="4398046511103" step="1" readonly="true" id="current" value="4398046511094" autocomplete="off" /></p>
+      <p><input type="button" id="undoBtn" value="Undo (Z)" /> <input type="button" id="redoBtn" value="Redo (Y)" />
+      <button id="stopBtn"><u>S</u>top</button> <button id="resetBtn"><u>R</u>eset</button></p>
+      <p>Current position: <input type="number" min="9" max="4398046511103" step="1" readonly="true" id="current" value="4398046511094" autocomplete="off" /></p>
       <p>Load position: <input type="number" min="9" max="4398046511103" step="1" id="load" placeholder="Click to load" autocomplete="off" /></p>
-      <p id="info">AI analysis will be shown here.</p>
+      <p id="info">AI analysis: (x0, y0), (x1, y1), rating (method)</p>
     </form>
   </div>
   <div id="h">
